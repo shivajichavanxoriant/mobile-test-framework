@@ -16,53 +16,53 @@ Scenario: Submit the form with invalid user credentials
     And User taps the Submit button
     Then Validation error message should be displayed
  
-# Scenario: Validate that list is in alphabetical order
-#     When I open Part 2
-#     And I scroll through the brand list
-#     Then the brand list should be in alphabetical order
+  Scenario: Validate that list is in alphabetical order
+      When I open Part 2
+     And I scroll through the brand list
+     Then the brand list should be in alphabetical order
  
-#Scenario: Validate empty categories
-#    When I open Part 2
-#    And I scroll through the brand list
-#   Then the following categories should be empty
-#    | E |
-#    | G |
-#    | Q |
-#    | U |
-#    | W |
-#    | X |
-#    | Y |
-#    | Z |
+ Scenario: Validate empty categories
+    When I open Part 2
+    And I scroll through the brand list
+   Then the following categories should be empty
+    | E |
+    | G |
+    | Q |
+    | U |
+    | W |
+    | X |
+    | Y |
+    | Z |
  
-# Scenario: Validate categories with 3 or more items
-#     When I open Part 2
-#    And I scroll through the brand list
-#     Then the following categories should have at least 3 items
-#     | A |
-#     | B |
-#     | C |
-#     | D |
-#     | F |
-#     | H |
-#     | L |
-#     | M |
-#     | R |
-#     | S |
+ Scenario: Validate categories with 3 or more items
+     When I open Part 2
+    And I scroll through the brand list
+     Then the following categories should have at least 3 items
+     | A |
+     | B |
+     | C |
+     | D |
+     | F |
+     | H |
+     | L |
+     | M |
+     | R |
+     | S |
  
-#  Scenario: Validate total sum
-#    When I open Part 3
-#    And I scroll through the product list
-#    Then the total should match the sum of all item prices
+  Scenario: Validate total sum
+    When I open Part 3
+    And I scroll through the product list
+    Then the total should match the sum of all item prices
     
-#    Scenario: Validate specific brand sum
-#    When I open Part 3 for brand total validation
-#    And I scroll through the product list and calculate brand totals
-#    Then the displayed brand totals should match the calculated brand totals
+    Scenario: Validate specific brand sum
+   When I open Part 3 for brand total validation
+    And I scroll through the product list and calculate brand totals
+    Then the displayed brand totals should match the calculated brand totals
     
-#    Scenario: Validate all unique FAKEIMAGE names
-#    When I open Part 3 for image validation
-#    And I scroll through the product list and save all item image names
-#    Then all item image names should match the allowed image names
+    Scenario: Validate all unique FAKEIMAGE names
+    When I open Part 3 for image validation
+   And I scroll through the product list and save all item image names
+    Then all item image names should match the allowed image names
     
  Scenario: TAT-71 Part 4 - Enable all Section One checkboxes
   When I open Part 4
