@@ -2,12 +2,13 @@ package com.appium.pages;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -16,12 +17,12 @@ import io.appium.java_client.android.AndroidDriver;
 
 public class Part3Page {
 
-	private final AndroidDriver driver;
-	private final WebDriverWait wait;
+	private AndroidDriver driver;
+	private WebDriverWait wait;
 
-	// =====================================================
-	// Part 3 locators
-	// =====================================================
+	// ==============================
+	// Part 3 Locators
+	// ==============================
 
 	private final By part3Button = AppiumBy.accessibilityId("Part 3");
 
@@ -31,224 +32,173 @@ public class Part3Page {
 
 	private final By productList = AppiumBy.accessibilityId("Product List");
 
-	// Product card elements
 	private final By fakeBrand = AppiumBy.accessibilityId("fakeBrand");
 
 	private final By fakePrice = AppiumBy.accessibilityId("fakePrice");
 
 	private final By fakeImage = AppiumBy.accessibilityId("fakeImage");
 
-	// =====================================================
+	// ==============================
 	// Constructor
-	// =====================================================
+	// ==============================
 
 	public Part3Page(AndroidDriver driver) {
 
 		this.driver = driver;
 
-		this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+		this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 	}
 
-	// =====================================================
-	// Open / wait for Part 3
-	// =====================================================
+	// ==============================
+	// Open Part 3
+	// ==============================
 
 	public void openPart3() {
 
 		wait.until(ExpectedConditions.elementToBeClickable(part3Button)).click();
 
 		waitForPart3();
-	}
-
-	// =====================================================
-	// Wait for Part 3 product list
-	// =====================================================
-
-	public void waitForPart3() {
-
-		wait.until(ExpectedConditions.presenceOfElementLocated(productList));
-
-		wait.until(ExpectedConditions.presenceOfElementLocated(fakePrice));
 
 		System.out.println("Part 3 opened and positioned at top.");
 	}
 
-	// =====================================================
-	// Get displayed Total
-	// =====================================================
+	// ==============================
+	// Wait for Part 3
+	// ==============================
+
+	private void waitForPart3() {
+
+		wait.until(ExpectedConditions.presenceOfElementLocated(productList));
+
+		wait.until(ExpectedConditions.presenceOfElementLocated(fakePrice));
+	}
+
+	// ==============================
+	// Get Displayed Total
+	// ==============================
 
 	public String getDisplayedTotal() {
 
 		return wait.until(ExpectedConditions.presenceOfElementLocated(total)).getText().trim();
 	}
 
-	// =====================================================
+	// ==============================
 	// Get Selected Total
-	// =====================================================
+	// ==============================
 
 	public String getSelectedTotal() {
 
 		return wait.until(ExpectedConditions.presenceOfElementLocated(selectedTotal)).getText().trim();
 	}
 
-	// =====================================================
-	// TAT-69
-	// Get displayed Brand Totals
-	// =====================================================
+	// ==============================
+	// Get Brand Totals
+	// ==============================
 
 	public List<String> getDisplayedBrandTotals() {
-		 
-	    List<WebElement> elements =
-	            driver.findElements(
-	                    AppiumBy.xpath(
-	                            "//android.widget.TextView[@content-desc='Brand Total']"
-	                    )
-	            );
-	 
-	    List<String> totals = new ArrayList<>();
-	 
-	    for (WebElement element : elements) {
-	 
-	        try {
-	            String text = element.getText().trim();
-	 
-	            if (!text.isEmpty()) {
-	                totals.add(text);
-	            }
-	 
-	        } catch (Exception e) {
-	            // Ignore recycled elements
-	        }
-	    }
-	 
-	    System.out.println();
-	    System.out.println("=================================");
-	    System.out.println("Displayed Brand Totals");
-	    System.out.println("=================================");
-	 
-	    for (String total : totals) {
-	        System.out.println(total);
-	    }
-	 
-	    return totals;
+
+		By brandTotalLocator = AppiumBy.xpath("//android.widget.TextView[@content-desc='Brand Total']");
+
+		return driver.findElements(brandTotalLocator).stream().map(WebElement::getText).toList();
 	}
-	 
-	// =====================================================
-	// Collect all products
-	// =====================================================
+
+	// ==============================
+	// Get All Products
+	// ==============================
 
 	public List<ProductData> getAllProducts() {
 
-		/*
-		 * LinkedHashMap preserves discovery order.
-		 *
-		 * Key: Brand + Price + FakeImage
-		 *
-		 * This prevents the same recycled card from being counted more than once.
-		 */
-		Map<String, ProductData> uniqueProducts = new LinkedHashMap<>();
+		List<ProductData> products = new ArrayList<>();
 
-		final int MAX_SCROLLS = 60;
+		final int MAX_SCROLLS = 80;
 
-		int noNewProductCount = 0;
-
-		String previousSignature = "";
+		int unchangedCount = 0;
 
 		for (int scroll = 1; scroll <= MAX_SCROLLS; scroll++) {
 
-			// Get currently visible products
-			List<WebElement> brands = driver.findElements(fakeBrand);
-
-			List<WebElement> prices = driver.findElements(fakePrice);
-
-			List<WebElement> images = driver.findElements(fakeImage);
+			int productsBefore = products.size();
 
 			/*
-			 * Only process indexes that exist in all three lists.
+			 * Collect currently visible products.
 			 */
-			int visibleCount = Math.min(brands.size(), Math.min(prices.size(), images.size()));
+			collectVisibleProducts(products);
 
-			int newProductsThisScroll = 0;
-
-			for (int i = 0; i < visibleCount; i++) {
-
-				try {
-
-					String brand = brands.get(i).getText().trim();
-
-					String price = prices.get(i).getText().trim();
-
-					String image = images.get(i).getText().trim();
-
-					if (brand.isEmpty() || price.isEmpty() || image.isEmpty()) {
-
-						continue;
-					}
-
-					String key = brand + "|" + price + "|" + image;
-
-					if (!uniqueProducts.containsKey(key)) {
-
-						uniqueProducts.put(key, new ProductData(brand, price, image));
-
-						newProductsThisScroll++;
-					}
-
-				} catch (Exception e) {
-
-					/*
-					 * RecyclerView can recycle an element while we are reading it.
-					 */
-				}
-			}
-
-			// Create signature of visible products
-			String currentSignature = buildSignature(brands, prices, images);
-
-			System.out.println("Scroll " + scroll + " -> Products collected: " + uniqueProducts.size());
+			System.out.println("Scroll " + scroll + " -> Products collected: " + products.size());
 
 			/*
-			 * Detect whether the screen stopped producing new products.
+			 * Check whether this scroll produced any new product.
 			 */
-			if (currentSignature.equals(previousSignature) && newProductsThisScroll == 0) {
+			if (products.size() == productsBefore) {
 
-				noNewProductCount++;
+				unchangedCount++;
 
 			} else {
 
-				noNewProductCount = 0;
+				unchangedCount = 0;
 			}
 
 			/*
-			 * Stop after 4 consecutive unchanged screens.
+			 * Do not immediately stop.
 			 *
-			 * Same safety approach as Part 2.
+			 * A product can be partially visible at the bottom of the list.
+			 *
+			 * We allow several unchanged scrolls before performing the final collection.
 			 */
-			if (noNewProductCount >= 4) {
+			if (unchangedCount >= 6) {
 
+				System.out.println();
 				System.out.println("No new products found.");
+
+				System.out.println("Performing final bottom collection...");
+
+				/*
+				 * One additional slow scroll.
+				 */
+				slowScrollUp();
+
+				try {
+
+					Thread.sleep(800);
+
+				} catch (InterruptedException e) {
+
+					Thread.currentThread().interrupt();
+				}
+
+				/*
+				 * FINAL COLLECTION.
+				 *
+				 * This is important because the last product may become fully visible here.
+				 */
+				collectVisibleProducts(products);
+
+				System.out.println("Final bottom collection -> Products collected: " + products.size());
 
 				System.out.println("Reached bottom of Product List.");
 
 				break;
 			}
 
-			previousSignature = currentSignature;
-
 			/*
-			 * Small controlled scroll.
-			 *
-			 * 0.15 reduces the chance of skipping products.
+			 * Normal smooth scroll.
 			 */
-			scrollUp();
+			slowScrollUp();
 
-			waitForListToChange(currentSignature);
+			try {
+
+				Thread.sleep(600);
+
+			} catch (InterruptedException e) {
+
+				Thread.currentThread().interrupt();
+			}
 		}
 
-		List<ProductData> products = new ArrayList<>(uniqueProducts.values());
+		// ==============================
+		// Final Product Output
+		// ==============================
 
 		System.out.println();
-
 		System.out.println("=================================");
 
 		System.out.println("Total products found: " + products.size());
@@ -257,89 +207,119 @@ public class Part3Page {
 
 		for (ProductData product : products) {
 
-			System.out.println(product);
+			System.out.println("Brand: " + product.getBrand() + " | Price: " + product.getPrice() + " | Image: "
+					+ product.getFakeImage());
 		}
 
 		return products;
 	}
 
-	// =====================================================
-	// Small controlled scroll
-	// =====================================================
+	// ==============================
+	// Collect Visible Products
+	// ==============================
 
-	private void scrollUp() {
-
-		int width = driver.manage().window().getSize().getWidth();
-
-		int height = driver.manage().window().getSize().getHeight();
-
-		driver.executeScript("mobile: swipeGesture", Map.of("left", 100, "top", 500, "width", width - 200, "height",
-				height - 700, "direction", "up", "percent", 0.15));
-	}
-
-	// =====================================================
-	// Wait for list to change
-	// =====================================================
-
-	private void waitForListToChange(String previousSignature) {
+	private void collectVisibleProducts(List<ProductData> products) {
 
 		try {
 
-			wait.until(driver -> {
+			WebElement productListElement = driver.findElement(productList);
 
-				String currentSignature = buildSignature(driver.findElements(fakeBrand), driver.findElements(fakePrice),
-						driver.findElements(fakeImage));
+			/*
+			 * Each direct android.view.View under Product List represents a product card.
+			 */
+			List<WebElement> cards = productListElement.findElements(By.xpath("./android.view.View"));
 
-				return !currentSignature.equals(previousSignature);
-			});
+			for (WebElement card : cards) {
+
+				try {
+
+					/*
+					 * Read all values from the SAME product card.
+					 */
+					WebElement brandElement = card.findElement(fakeBrand);
+
+					WebElement priceElement = card.findElement(fakePrice);
+
+					WebElement imageElement = card.findElement(fakeImage);
+
+					String brand = brandElement.getText().trim();
+
+					String price = priceElement.getText().trim();
+
+					String image = imageElement.getText().trim();
+
+					String productKey = brand + "|" + price + "|" + image;
+
+					/*
+					 * Avoid collecting the same product again.
+					 */
+					boolean alreadyExists = false;
+
+					for (ProductData existing : products) {
+
+						String existingKey = existing.getBrand() + "|" + existing.getPrice() + "|"
+								+ existing.getFakeImage();
+
+						if (existingKey.equals(productKey)) {
+
+							alreadyExists = true;
+
+							break;
+						}
+					}
+
+					if (!alreadyExists) {
+
+						ProductData product = new ProductData(brand, price, image);
+
+						products.add(product);
+
+						System.out.println("New Product -> " + brand + " | " + price + " | " + image);
+					}
+
+				} catch (Exception e) {
+
+					/*
+					 * Ignore cards that are not currently completely rendered.
+					 */
+				}
+			}
 
 		} catch (Exception e) {
 
-			/*
-			 * Timeout is handled by the next loop.
-			 *
-			 * No Thread.sleep().
-			 */
+			System.out.println("Unable to collect visible products: " + e.getMessage());
 		}
 	}
-	// =====================================================
-	// Build visible-product signature
-	// =====================================================
 
-	private String buildSignature(List<WebElement> brands, List<WebElement> prices, List<WebElement> images) {
+	// Smooth Scroll
+	// ==============================
 
-		StringBuilder signature = new StringBuilder();
+	private void slowScrollUp() {
 
-		int count = Math.min(brands.size(), Math.min(prices.size(), images.size()));
+		PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
 
-		for (int i = 0; i < count; i++) {
+		Sequence swipe = new Sequence(finger, 1);
 
-			try {
+		swipe.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), 600, 1900));
 
-				signature.append(brands.get(i).getText()).append("|");
+		swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
 
-				signature.append(prices.get(i).getText()).append("|");
+		swipe.addAction(finger.createPointerMove(Duration.ofMillis(1200), PointerInput.Origin.viewport(), 600, 1100));
 
-				signature.append(images.get(i).getText()).append("||");
+		swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
 
-			} catch (Exception e) {
-
-				// Ignore recycled elements.
-			}
-		}
-
-		return signature.toString();
+		driver.perform(Arrays.asList(swipe));
 	}
 
-	// =====================================================
-	// Product data
-	// =====================================================
+	// ==============================
+	// Product Data
+	// ==============================
 
 	public static class ProductData {
 
-		private final String brand;
-		private final String price;
-		private final String fakeImage;
+		private String brand;
+		private String price;
+		private String fakeImage;
 
 		public ProductData(String brand, String price, String fakeImage) {
 
@@ -349,24 +329,22 @@ public class Part3Page {
 		}
 
 		public String getBrand() {
-
 			return brand;
 		}
 
 		public String getPrice() {
-
 			return price;
 		}
 
 		public String getFakeImage() {
-
 			return fakeImage;
 		}
 
 		@Override
 		public String toString() {
 
-			return "Brand: " + brand + " | Price: " + price + " | Image: " + fakeImage;
+			return "ProductData{" + "brand='" + brand + '\'' + ", price='" + price + '\'' + ", fakeImage='" + fakeImage
+					+ '\'' + '}';
 		}
 	}
 }
