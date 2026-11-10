@@ -1,35 +1,71 @@
+ 
 package com.appium.base;
  
-import java.net.URL;
+import java.net.URI;
  
 import com.appium.config.ConfigReader;
+import com.appium.constants.FrameworkConstants;
 import com.appium.driver.DriverManager;
  
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
  
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+ 
 public class BaseTest {
  
-	public void setUp() throws Exception {
+    private static final Logger logger =
+            LoggerFactory.getLogger(BaseTest.class);
  
-        ConfigReader.loadProperties("src/test/resources/config/config.properties");
+    public void setUp() throws Exception {
  
-        UiAutomator2Options options = new UiAutomator2Options();
+        try {
+            logger.info("Loading framework configuration");
  
-        options.setPlatformName(ConfigReader.getProperty("platformName"));
-        options.setAutomationName(ConfigReader.getProperty("automationName"));
-        options.setDeviceName(ConfigReader.getProperty("deviceName"));
-        options.setApp(ConfigReader.getProperty("appPath"));
+            ConfigReader.loadProperties(
+                    FrameworkConstants.CONFIG_FILE_PATH);
  
-        AndroidDriver driver = new AndroidDriver(
-        		new URL(ConfigReader.getProperty("appiumServer")),
-                options);
+            UiAutomator2Options options = new UiAutomator2Options();
  
-        DriverManager.setDriver(driver);
+            options.setPlatformName(
+                    ConfigReader.getProperty("platformName"));
+ 
+            options.setAutomationName(
+                    ConfigReader.getProperty("automationName"));
+ 
+            options.setDeviceName(
+                    ConfigReader.getProperty("deviceName"));
+ 
+            options.setApp(
+                    ConfigReader.getProperty("appPath"));
+ 
+            String appiumServerUrl =
+                    ConfigReader.getProperty("appiumServer");
+ 
+            logger.info("Initializing Android Appium driver");
+ 
+            AndroidDriver driver = new AndroidDriver(
+                    URI.create(appiumServerUrl).toURL(),
+                    options);
+ 
+            DriverManager.setDriver(driver);
+ 
+            logger.info("Android Appium driver initialized successfully");
+ 
+        } catch (Exception e) {
+            logger.error("Failed to initialize Android Appium driver", e);
+            throw e;
+        }
     }
  
     public void tearDown() {
  
+        logger.info("Closing Android Appium driver");
+ 
         DriverManager.quitDriver();
+ 
+        logger.info("Android Appium driver closed successfully");
     }
 }
+ 

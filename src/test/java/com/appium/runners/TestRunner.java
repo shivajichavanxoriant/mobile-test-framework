@@ -4,16 +4,17 @@ import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
  
 @CucumberOptions(
-    features = "src/test/resources/features",
-    glue = {"com.appium.stepdefinitions", "com.appium.hooks"},
+    features ="src/test/resources/features",
+    glue = {
+        "com.appium.stepdefinitions",
+        "com.appium.hooks"
+    },
     plugin = {
         "pretty",
-        "html:target/cucumber-report.html"
+        "html:target/cucumber-report.html",
+        "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
     },
-    monochrome = true 
+    monochrome = true
 )
-
-
 public class TestRunner extends AbstractTestNGCucumberTests {
- 
 }

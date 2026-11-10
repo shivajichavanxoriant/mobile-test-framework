@@ -1,10 +1,12 @@
+ 
 package com.appium.stepdefinitions;
  
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
- 
-import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+ 
+import org.testng.Assert;
  
 import com.appium.driver.DriverManager;
 import com.appium.pages.Part3Page;
@@ -17,192 +19,243 @@ import io.cucumber.java.en.When;
 public class Part3Steps {
  
     private Part3Page part3Page;
+ 
     private List<ProductData> products;
  
-    private BigDecimal calculatedTotal;
+    private double displayedTotal;
  
-    // Stores Total before scrolling
-    private String displayedTotalBeforeScroll;
+    private double calculatedTotal;
  
+    private Map<String, Double> calculatedBrandTotals =
+            new LinkedHashMap<>();
  
-    // =========================================================
-    // TAT-68 - Validate Total Sum
-    // =========================================================
+    private Map<String, Double> displayedBrandTotals =
+            new LinkedHashMap<>();
+ 
+    private Set<String> imageNames;
+ 
+    // --------------------------------------------------
+    // TAT-68: OPEN PART 3
+    // --------------------------------------------------
  
     @When("I open Part 3")
     public void iOpenPart3() {
  
-        part3Page = new Part3Page(DriverManager.getDriver());
+        initializePart3();
  
-        part3Page.openPart3();
- 
-        // Capture Total before scrolling
-        displayedTotalBeforeScroll = part3Page.getDisplayedTotal();
- 
-        System.out.println();
-        System.out.println("=================================");
-        System.out.println("TAT-68 - Part 3 opened");
-        System.out.println("Displayed Total = "
-                + displayedTotalBeforeScroll);
-        System.out.println("=================================");
+        displayedTotal = part3Page.getDisplayedTotal();
     }
  
+    // --------------------------------------------------
+    // TAT-68: SCROLL AND COLLECT PRODUCTS
+    // --------------------------------------------------
  
     @And("I scroll through the product list")
     public void iScrollThroughTheProductList() {
  
         products = part3Page.getAllProducts();
  
-        calculatedTotal = BigDecimal.ZERO;
+        Assert.assertFalse(
+                products.isEmpty(),
+                "No products were collected."
+        );
  
-        System.out.println();
-        System.out.println("=================================");
-        System.out.println("TAT-68 - Calculating Total");
-        System.out.println("=================================");
+        calculatedTotal = 0.0;
  
         for (ProductData product : products) {
  
-            String priceText = product.getPrice();
- 
-            String cleanPrice = priceText
-                    .replace("Price:", "")
-                    .replace("$", "")
-                    .trim();
- 
-            BigDecimal price = new BigDecimal(cleanPrice);
- 
-            calculatedTotal = calculatedTotal.add(price);
- 
-            System.out.println(
-                    "Brand: " + product.getBrand()
-                    + " | Price: " + price + "$"
-            );
+            calculatedTotal += product.getPrice();
         }
  
-        System.out.println("---------------------------------");
         System.out.println(
-                "Calculated Total = "
-                + calculatedTotal
-                + "$"
+                "Calculated product total: " + calculatedTotal
         );
-        System.out.println("---------------------------------");
+ 
+        System.out.println(
+                "Displayed product total: " + displayedTotal
+        );
     }
  
+    // --------------------------------------------------
+    // TAT-68: VALIDATE TOTAL
+    // --------------------------------------------------
  
     @Then("the total should match the sum of all item prices")
     public void theTotalShouldMatchTheSumOfAllItemPrices() {
  
-        String cleanDisplayedTotal =
-                displayedTotalBeforeScroll
-                        .replace("Total:", "")
-                        .replace("$", "")
-                        .trim();
- 
-        BigDecimal displayedTotal =
-                new BigDecimal(cleanDisplayedTotal);
- 
-        System.out.println();
-        System.out.println("=================================");
-        System.out.println("TAT-68 - Total Validation");
-        System.out.println("=================================");
- 
-        System.out.println(
-                "Calculated Total = "
-                + calculatedTotal
-                + "$"
-        );
- 
-        System.out.println(
-                "Displayed Total = "
-                + displayedTotal
-                + "$"
-        );
- 
-        assertEquals(
-                displayedTotal,
+        Assert.assertEquals(
                 calculatedTotal,
-                "TAT-68 FAILED: Displayed Total does not match the sum of all item prices."
+                displayedTotal,
+                0.01,
+                "Product price sum does not match displayed Total."
         );
  
-        System.out.println();
-        System.out.println("=================================");
-        System.out.println("TAT-68 PASSED");
-        System.out.println("Displayed Total matches all item prices.");
-        System.out.println("=================================");
+        System.out.println("TAT-68 passed.");
     }
  
+    // --------------------------------------------------
+    // TAT-69: OPEN PART 3
+    // --------------------------------------------------
  
-    // =========================================================
-    // TAT-70 - Validate FAKEIMAGE Names
-    // =========================================================
+    @When("I open Part 3 for brand total validation")
+    public void iOpenPart3ForBrandTotalValidation() {
+ 
+        initializePart3();
+ 
+        // Capture displayed brand totals before scrolling.
+        displayedBrandTotals =
+                part3Page.getDisplayedBrandTotals();
+ 
+        System.out.println(
+                "Displayed brand totals captured: "
+                        + displayedBrandTotals
+        );
+    }
+ 
+    // --------------------------------------------------
+    // TAT-69: CALCULATE BRAND TOTALS
+    // --------------------------------------------------
+ 
+    @And("I scroll through the product list and calculate brand totals")
+    public void iScrollAndCalculateBrandTotals() {
+ 
+        // Existing product collection remains unchanged.
+        products = part3Page.getAllProducts();
+ 
+        calculatedBrandTotals.clear();
+ 
+        for (ProductData product : products) {
+ 
+            calculatedBrandTotals.merge(
+                    product.getBrand(),
+                    product.getPrice(),
+                    Double::sum
+            );
+        }
+ 
+        System.out.println(
+                "Calculated brand totals: "
+                        + calculatedBrandTotals
+        );
+ 
+        System.out.println(
+                "Displayed brand totals: "
+                        + displayedBrandTotals
+        );
+    }
+ 
+    // --------------------------------------------------
+    // TAT-69: VALIDATE BRAND TOTALS
+    // --------------------------------------------------
+ 
+    @Then("the displayed brand totals should match the calculated brand totals")
+    public void displayedBrandTotalsShouldMatchCalculatedBrandTotals() {
+ 
+        Assert.assertFalse(
+                calculatedBrandTotals.isEmpty(),
+                "No calculated brand totals were found."
+        );
+ 
+        Assert.assertFalse(
+                displayedBrandTotals.isEmpty(),
+                "No displayed brand totals were collected."
+        );
+ 
+        Assert.assertEquals(
+                displayedBrandTotals.size(),
+                calculatedBrandTotals.size(),
+                "Number of displayed brands does not match calculated brands."
+        );
+ 
+        for (String brand : calculatedBrandTotals.keySet()) {
+ 
+            Assert.assertTrue(
+                    displayedBrandTotals.containsKey(brand),
+                    "Displayed total missing for brand: " + brand
+            );
+ 
+            double calculated =
+                    calculatedBrandTotals.get(brand);
+ 
+            double displayed =
+                    displayedBrandTotals.get(brand);
+ 
+            Assert.assertEquals(
+                    calculated,
+                    displayed,
+                    0.01,
+                    "Brand total mismatch for: " + brand
+            );
+        }
+ 
+        System.out.println("TAT-69 passed.");
+    }
+ 
+    // --------------------------------------------------
+    // TAT-70: OPEN PART 3
+    // --------------------------------------------------
  
     @When("I open Part 3 for image validation")
     public void iOpenPart3ForImageValidation() {
  
-        part3Page = new Part3Page(DriverManager.getDriver());
- 
-        part3Page.openPart3();
- 
-        System.out.println("Part 3 opened for TAT-70.");
+        initializePart3();
     }
  
+    // --------------------------------------------------
+    // TAT-70: COLLECT IMAGE NAMES
+    // --------------------------------------------------
  
     @And("I scroll through the product list and save all item image names")
-    public void iScrollThroughTheProductListAndSaveAllItemImageNames() {
+    public void iScrollAndSaveAllItemImageNames() {
  
         products = part3Page.getAllProducts();
  
-        System.out.println();
-        System.out.println("=================================");
-        System.out.println("TAT-70 - FAKEIMAGE Names");
-        System.out.println("=================================");
+        imageNames = part3Page.getCollectedImageNames();
  
-        for (ProductData product : products) {
- 
-            System.out.println(
-                    "Brand: "
-                    + product.getBrand()
-                    + " | Image: "
-                    + product.getFakeImage()
-            );
-        }
         System.out.println(
-                "Total products collected: "
-                + products.size()
+                "Collected unique image names: " + imageNames
         );
     }
  
+    // --------------------------------------------------
+    // TAT-70: VALIDATE IMAGE NAMES
+    // --------------------------------------------------
  
     @Then("all item image names should match the allowed image names")
     public void allItemImageNamesShouldMatchTheAllowedImageNames() {
  
-        for (ProductData product : products) {
+        Assert.assertNotNull(
+                imageNames,
+                "Image names collection is null."
+        );
  
-            String imageName = product.getFakeImage();
+        Assert.assertFalse(
+                imageNames.isEmpty(),
+                "No image names were collected."
+        );
  
-            System.out.println(
-                    "Image: " + imageName
-            );
+        for (String imageName : imageNames) {
  
-            assertTrue(
-                    imageName != null
-                    && imageName.startsWith("FAKEIMAGE-")
-                    && imageName.length()
-                    > "FAKEIMAGE-".length(),
- 
-                    "TAT-70 FAILED: Invalid FAKEIMAGE name: "
-                    + imageName
+            Assert.assertTrue(
+                    imageName.matches("^FAKEIMAGE-.+"),
+                    "Unexpected image name: " + imageName
             );
         }
  
-        System.out.println();
-        System.out.println("=================================");
-        System.out.println(
-                "TAT-70 PASSED: All item image names are valid Android FAKEIMAGE names."
+        System.out.println("TAT-70 passed.");
+    }
+ 
+    // --------------------------------------------------
+    // INITIALIZE PART 3
+    // --------------------------------------------------
+ 
+    private void initializePart3() {
+ 
+        part3Page = new Part3Page(
+                DriverManager.getDriver()
         );
-        System.out.println("=================================");
+ 
+        part3Page.openPart3();
     }
 }
- 
-     
  

@@ -1,77 +1,88 @@
+ 
 package com.appium.stepdefinitions;
-
-import static org.testng.Assert.assertTrue;
-
+ 
 import com.appium.driver.DriverManager;
 import com.appium.pages.Part4Page;
-
+ 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
+ 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+ 
 public class Part4Steps {
-
-	private Part4Page part4Page;
-
-	// =====================================================
-	// TAT-71
-	// Open Part 4
-	// =====================================================
-	@When("I open Part 4")
-	public void iOpenPart4() {
-		part4Page = new Part4Page(DriverManager.getDriver());
-		part4Page.openPart4();
-		System.out.println("Part 4 opened.");
-	}
-
-	// =====================================================
-	// TAT-71
-	// Enable Section 1 checkboxes
-	// =====================================================
-	@And("I enable section 1 checkboxes")
-	public void iEnableSection1Checkboxes() {
-		part4Page.enableSection1Checkboxes();
-		System.out.println("Section 1 checkboxes enabled.");
-	}
-
-	// =====================================================
-	// TAT-72
-	// Enable Section 2 checkboxes
-	// =====================================================
-	@And("I enable section 2 checkboxes")
-	public void iEnableSection2Checkboxes() {
-		part4Page.enableSection2Checkboxes();
-		System.out.println("Section 2 checkboxes enabled.");
-	}
-
-	// =====================================================
-	// TAT-73
-	// Enable Section 3 checkboxes
-	// =====================================================
-	@And("I enable section 3 checkboxes")
-	public void iEnableSection3Checkboxes() {
-		part4Page.enableSection3Checkboxes();
-		System.out.println("Section 3 checkboxes enabled.");
-	}
-
-	// =====================================================
-	// Common Step
-	// Click Submit
-	// =====================================================
-	@And("I click Submit")
-	public void iClickSubmit() {
-		part4Page.clickSubmit();
-		System.out.println("Submit clicked.");
-	}
-
-	// =====================================================
-	// Common Step
-	// Validate Success popup
-	// =====================================================
-	@Then("I should see Success popup for section {string}")
-	public void iShouldSeeSuccessPopup(String section) {
-		boolean success = part4Page.validateSuccess(section);
-		assertTrue(success, "Success popup not displayed for section " + section);
-		System.out.println("Success popup validated for section " + section + ".");
-	}
+ 
+    private static final Logger logger =
+            LoggerFactory.getLogger(Part4Steps.class);
+ 
+    private Part4Page part4Page;
+ 
+    @When("I open Part 4")
+    public void iOpenPart4() {
+ 
+        part4Page =
+                new Part4Page(DriverManager.getDriver());
+ 
+        part4Page.openPart4();
+ 
+        logger.info("Part 4 opened successfully.");
+    }
+ 
+    @And("I enable section {int} checkboxes")
+    public void iEnableSectionCheckboxes(Integer section) {
+ 
+    	switch (section) {
+    	 
+        case 1:
+            part4Page.enableAllSection1Checkboxes();
+            break;
+     
+        case 2:
+            part4Page.enableAllSection1Checkboxes();
+            part4Page.enableSection2SiblingCheckboxes();
+            break;
+     
+        case 3:
+        	 // Complete Section 1
+            part4Page.enableAllSection1Checkboxes();
+         
+            // Complete Section 2 dynamically
+            part4Page.enableSection2SiblingCheckboxes();
+         
+            // Complete Section 3 using Yes labels
+            part4Page.enableSection3YesCheckboxes();
+            break;
+     
+        default:
+            throw new IllegalArgumentException(
+                "Invalid Part 4 section: " + section);
+    }
+     
+        logger.info(
+                "Section {} checkboxes processed.",
+                section);
+    }
+ 
+    @And("I click Submit")
+    public void iClickSubmit() {
+ 
+        part4Page.clickSubmit();
+ 
+        logger.info("Submit button clicked.");
+    }
+ 
+    @Then("I should see Success popup for section {string}")
+    public void iShouldSeeSuccessPopupForSection(String section) {
+ 
+        String expectedMessage =
+                "Step " + section + ": Success";
+ 
+        part4Page.validateSuccess(expectedMessage);
+ 
+        logger.info(
+                "Validated success message: {}",
+                expectedMessage);
+    }
 }
+ 

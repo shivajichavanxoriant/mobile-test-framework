@@ -11,11 +11,23 @@
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
-  <properties>
+<properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>17</maven.compiler.release>
-  </properties>
+    <allure.version>3.0.0</allure.version>
+</properties>
 
+ <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-bom</artifactId>
+            <version>${allure.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 
     <dependencies>
       <dependency>
@@ -53,7 +65,13 @@
     <artifactId>cucumber-testng</artifactId>
     <version>7.20.1</version>
 </dependency>
- 
+
+<dependency>
+    <groupId>io.qameta.allure</groupId>
+    <artifactId>allure-cucumber7-jvm</artifactId>
+    <scope>test</scope>
+</dependency>
+
   </dependencies>
 
   <build>

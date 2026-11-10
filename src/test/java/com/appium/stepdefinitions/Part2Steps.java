@@ -1,7 +1,10 @@
+ 
 package com.appium.stepdefinitions;
  
 import java.util.List;
  
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
  
 import com.appium.driver.DriverManager;
@@ -12,6 +15,9 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
  
 public class Part2Steps {
+ 
+    private static final Logger logger =
+            LoggerFactory.getLogger(Part2Steps.class);
  
     private Part2Page part2Page;
     private List<String> brands;
@@ -33,9 +39,7 @@ public class Part2Steps {
          */
         brands = part2Page.getAllBrands();
  
-        System.out.println(
-                "Total brands found: " + brands.size()
-        );
+        logger.info("Total brands found: {}", brands.size());
     }
  
     // =====================================================
@@ -59,15 +63,10 @@ public class Part2Steps {
         /*
          * Verify alphabetical order.
          */
-        for (int i = 0;
-                i < brands.size() - 1;
-                i++) {
+        for (int i = 0; i < brands.size() - 1; i++) {
  
-            String current =
-                    brands.get(i);
- 
-            String next =
-                    brands.get(i + 1);
+            String current = brands.get(i);
+            String next = brands.get(i + 1);
  
             Assert.assertTrue(
                     current.compareToIgnoreCase(next) <= 0,
@@ -79,7 +78,7 @@ public class Part2Steps {
             );
         }
  
-        System.out.println(
+        logger.info(
                 "TAT-64 PASSED: 64 brands are in alphabetical order."
         );
     }
@@ -118,16 +117,14 @@ public class Part2Steps {
                             + " contains a brand."
             );
  
-            System.out.println(
-                    "TAT-66: Category "
-                            + category
-                            + " is empty."
+            logger.info(
+                    "TAT-66: Category {} is empty.",
+                    category
             );
         }
  
-        System.out.println(
-                "TAT-66 PASSED: All expected empty "
-                        + "categories are empty."
+        logger.info(
+                "TAT-66 PASSED: All expected empty categories are empty."
         );
     }
  
@@ -167,18 +164,15 @@ public class Part2Steps {
                             + "Expected at least 3."
             );
  
-            System.out.println(
-                    "TAT-67: Category "
-                            + category
-                            + " has "
-                            + count
-                            + " items."
+            logger.info(
+                    "TAT-67: Category {} has {} items.",
+                    category,
+                    count
             );
         }
  
-        System.out.println(
-                "TAT-67 PASSED: All expected categories "
-                        + "have at least 3 items."
+        logger.info(
+                "TAT-67 PASSED: All expected categories have at least 3 items."
         );
     }
 }
